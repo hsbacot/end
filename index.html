@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<head>
+<title>The End</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+
+</head>
+
+<body>
+<div id="content">
+<h1>The End</h1>
+<h2>by Hunter Bacot</h2>
+<p>
+<input type="range" onchange="set('blur', this.value + 'px');" value="0" step="1" min="0" max="10"> Blur<br>
+<input type="range" onchange="set('brightness', this.valueAsNumber);" value="0" step="0.05" min="0" max="0.4"> Brightness<br>
+<input type="range" onchange="set('contrast', this.valueAsNumber);" value="0" step="0.1" min="0" max="10"> Contrast<br>
+<input type="range" onchange="set('grayscale', this.valueAsNumber);" value="0" step="0.1" min="0" max="1"> Grayscale<br>
+<input type="range" onchange="set('hue-rotate', this.value + 'deg');" value="0" step="15" min="0" max="360"> Hue Rotate<br>
+<input type="range" onchange="set('invert', this.valueAsNumber);" value="0" step="0.1" min="0" max="1"> Invert<br>
+<input type="range" onchange="set('saturate', this.valueAsNumber);" value="0" step="0.1" min="1" max="15"> Saturate<br>
+<input type="range" onchange="set('sepia', this.valueAsNumber);" value="0" step="0.1" min="0" max="1"> Sepia<br>
+
+
+</p>
+</div>
+
+<video autoplay id="vid" class="blur contrast invert saturation"></video>
+<canvas id="canvas" width="640" height="480"></canvas>
+<button onclick="snapshot()">Take Picture</button>
+
+<script type="text/javascript">
+
+    var video = document.querySelector("#vid");
+    var canvas = document.querySelector('#canvas');
+    var ctx = canvas.getContext('2d');
+    var localMediaStream = null;
+
+    var onCameraFail = function (e) {
+        console.log('Camera did not work.', e);
+    };
+
+    function snapshot() {
+        if (localMediaStream) {
+            ctx.drawImage(video, 0, 0);
+        }
+    }
+
+    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+    window.URL = window.URL || window.webkitURL;
+    navigator.getUserMedia({video:true}, function (stream) {
+        video.src = window.URL.createObjectURL(stream);
+        localMediaStream = stream;
+    }, onCameraFail);
+
+</script>
+<script>
+var FILTER_VALS = {};
+var el = document.querySelector('#vid');
+
+function go(me, className) {
+  var activeButton = document.querySelector('button.active');
+  if (activeButton) {
+    activeButton.classList.remove('active');
+    el.classList.remove(activeButton.textContent);
+  }
+
+  me.classList.add('active');
+  el.classList.toggle(className);
+}
+
+function stop() {
+  var activeButton = document.querySelector('button.active');
+  if (activeButton) {
+    activeButton.classList.remove('active');
+  }
+  el.className = '';
+}
+
+function reset() {
+  FILTER_VALS = {};
+  render();
+  document.querySelector('output').textContent = '-webkit-filter: none;';
+  el.className = '';
+
+  var ranges = document.querySelectorAll('input[type="range"]');
+  for (var i = 0, r; r = ranges[i]; i++) {
+    r.value = r.min;
+  }
+}
+
+function set(filter, value) {
+  FILTER_VALS[filter] = typeof value == 'number' ? Math.round(value * 10) / 10 : value;
+  if (value == 0 || (typeof value == 'string' && value.indexOf('0') == 0)) {
+    delete FILTER_VALS[filter];
+  }
+  render();
+}
+
+function render() {
+  var vals = [];
+  Object.keys(FILTER_VALS).sort().forEach(function(key, i) {
+    vals.push(key + '(' + FILTER_VALS[key] + ')');
+  });
+  var val = vals.join(' ');
+  el.style.webkitFilter = val;
+  document.querySelector('output').textContent = '-webkit-filter: ' + (val ? val : 'none') + ';';
+}
+
+window.addEventListener('keydown', function(e) {
+  if (e.keyCode == 27) { // ESC
+    document.querySelector('details').open = false;
+  }
+}, false);
+</script>
+
+</body>
